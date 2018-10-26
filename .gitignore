@@ -15,6 +15,18 @@
 *.la
 *.a
 
+# Compiled Erlang files
+*.beam
+
+# MSVC stuff
+*.Debug
+*.Release
+debug/
+release/
+
+# Core dumps
+*.dump
+
 # QT GUI
 # --------
 
@@ -39,18 +51,19 @@ app/gui/qt/Sonic Pi.app
 app/gui/qt/build
 
 app/gui/qt/info
-app/gui/qt/qrc_info_files.cpp
+app/gui/qt/qrc*.cpp
+app/gui/qt/resources
 
 # HTML GUI
 # --------
 
 # Javascript map files
-app/gui/html/js/*.map
+app/gui/html/resources/public/js/*.map
 
 # Dev Javascript
-app/gui/html/js/generated
+app/gui/html/resources/public/js/generated
 app/gui/html/target
-app/gui/html/js/cljs-main.js
+app/gui/html/resources/public/js/cljs-main.js
 
 
 # QT makefile
@@ -59,6 +72,7 @@ app/gui/html/js/cljs-main.js
 app/gui/qt/Makefile
 
 app/gui/qt/moc_*
+app/gui/qt/qrc__*
 
 
 # Detritus
@@ -66,22 +80,44 @@ app/gui/qt/moc_*
 
 *.DS_Store
 *.log
+*.swp
+*.tmp
 \.#*
 .lein-plugins
 *~
+*.orig
 
 # Native
 
 app/server/native/
 app/server/vendor/ffi/ext/
+app/server/vendor/ffi-1.9.10/ext/ffi_c/Makefile
+app/server/vendor/ffi-1.9.10/ext/ffi_c/extconf.h
+app/server/vendor/*/ext
 
 app/server/rb-native/
 
 ## Rugged
 
-app/server/vendor/rugged/ext/rugged/Makefile
-app/server/vendor/rugged/vendor/libgit2/build
+app/server/vendor/rugged*/ext/rugged/Makefile
+app/server/vendor/rugged*/vendor/libgit2/build
 
 ## Atomic
 
 app/server/vendor/atomic/ext/Makefile
+
+
+## Book
+
+book/
+
+## IntelliJ IDEA
+
+*.iml
+
+## i18n auto-generated files
+
+etc/doc/lang/sonic-pi-tutorial.pot
+etc/doc/generated/
+app/server/vendor/ffi-1.9.17/ext/ffi_c/extconf.h
+app/server/vendor/ffi-1.9.17/ext/ffi_c/Makefile

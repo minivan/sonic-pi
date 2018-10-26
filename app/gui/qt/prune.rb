@@ -5,7 +5,7 @@
 # Full project source: https://github.com/samaaron/sonic-pi
 # License: https://github.com/samaaron/sonic-pi/blob/master/LICENSE.md
 #
-# Copyright 2013, 2014, 2015 by Sam Aaron (http://sam.aaron.name).
+# Copyright 2013, 2014, 2015, 2016 by Sam Aaron (http://sam.aaron.name).
 # All rights reserved.
 #
 # Permission is granted for use, copying, modification, and
@@ -35,7 +35,7 @@ subdirs = Dir["#{dir}/*/*"].select{|d| File.directory?(d) && (File.basename(d) !
 puts ""
 
 
-raise "Aborting prune. Doesn't look like you're using an app/server/vendor dir" unless subdirs.first.match(/app\/server\/vendor/)
+raise "Aborting prune. Doesn't look like you're using an app/server/ruby/vendor dir" unless subdirs.first.match(/app\/server\/ruby\/vendor/)
 
 if rehearse
   puts "Would remove: "

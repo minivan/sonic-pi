@@ -14,56 +14,58 @@
 #++
 
 ## ---- Modify these to point to your system
-QSCINTILLA=/Users/sam/Downloads/tmp/QScintilla-gpl-2.9/Qt4Qt5
-QTBIN=/Users/sam/Development/Qt/5.4/clang_64/bin
-LIBQS=libqscintilla2.12.0.0.dylib
-LIBQS_LINK=libqscintilla2.12.dylib
+QSCINTILLA_QT4QT5_DIR=/Users/sam/Development/tmp/QScintilla_gpl-2.10.2/Qt4Qt5
+QSCINTILLA_LIB=libqscintilla2_qt5.13.1.0.dylib
+QWT_DIR=/Users/sam/Development/tmp/qwt-6.1.3
+QT_DIR=/Users/sam/Qt/5.7.1/5.7
 ## ----
 
-QMAKE=$QTBIN/qmake
-LREL=$QTBIN/lrelease
-MACDEPLOYQT=$QTBIN/macdeployqt
-LIBQS_PATH=$QSCINTILLA/$LIBQS
 
-SP='Sonic Pi.app'
+QT_BIN="$QT_DIR/clang_64/bin"
+QMAKE="$QT_BIN/qmake"
+LREL="$QT_BIN/lrelease"
+MACDEPLOYQT="$QT_BIN/macdeployqt"
+MACCHANGEQT="$QT_BIN/macchangeqt"
+LIBQS_PATH="$QSCINTILLA_QT4QT5_DIR/$QSCINTILLA_LIB"
+SP_APP='Sonic Pi.app'
 
 set -eux
 cd $(dirname $0)
 
-# Create empty build dir
-rm -rf build
-mkdir build
-
 # Generate automated docs
+../../server/native/ruby/bin/ruby ../../server/ruby/bin/i18n-tool.rb -t
 cp -f ruby_help.tmpl ruby_help.h
-../../server/bin/qt-doc.rb -o ruby_help.h
+../../server/native/ruby/bin/ruby ../../server/ruby/bin/qt-doc.rb -o ruby_help.h
 
 # Generate i18n files
-$LREL SonicPi.pro
+"$LREL" SonicPi.pro
 
 # Build app
-$QMAKE -o Makefile SonicPi.pro
+"$QMAKE" -o Makefile SonicPi.pro
 make
 
 # Move to build
-mv "$SP" build
-cd build
 
-# pull in QScintilla to app
-cp $LIBQS_PATH "$SP/Contents/MacOS/"
+rm -rf build
+mkdir build
+mv "$SP_APP" build/
+cd build
 
 # Make stand-alone Qt Mac App
 # Pulls in Qt internally and
 # futzes with shared lib paths
-$MACDEPLOYQT "$SP"
+$MACDEPLOYQT "$SP_APP"
+$MACCHANGEQT "$SP_APP" "$QT_DIR"
 
-# Put qscintilla dylib in Frameworks dir and symlink
-cd "$SP/Contents/Frameworks"
-mv ../MacOS/$LIBQS .
+# Pull in QScintilla to app
+cp $LIBQS_PATH "$SP_APP/Contents/MacOS/"
+cd "$SP_APP/Contents/MacOS"
+cp -R "$QWT_DIR/lib/qwt.framework" .
+mv libqscintilla2* libqscintilla2_qt5.dylib
 
-if [ ! -f $LIBQS_LINK ]; then
-  ln -s $LIBQS $LIBQS_LINK
-fi
+
+install_name_tool -change libqscintilla2_qt5.13.dylib @executable_path/libqscintilla2_qt5.dylib Sonic\ Pi
+install_name_tool -change qwt.framework/Versions/6/qwt @executable_path/qwt.framework/Versions/6/qwt  Sonic\ Pi
 
 # symlink server
 # For final release, these need to be mv'd

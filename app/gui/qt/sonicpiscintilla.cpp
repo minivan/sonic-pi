@@ -3,30 +3,40 @@
 // Full project source: https://github.com/samaaron/sonic-pi
 // License: https://github.com/samaaron/sonic-pi/blob/master/LICENSE.md
 //
-// Copyright 2013, 2014 by Sam Aaron (http://sam.aaron.name).
+// Copyright 2013, 2014, 2015, 2016 by Sam Aaron (http://sam.aaron.name).
 // All rights reserved.
 //
-// Permission is granted for use, copying, modification, distribution,
-// and distribution of modified versions of this work as long as this
+// Permission is granted for use, copying, modification, and
+// distribution of modified versions of this work as long as this
 // notice is included.
 //++
 
 #include "sonicpiscintilla.h"
+#include "oscsender.h"
 
 #include <QSettings>
 #include <QShortcut>
-
+#include <QDrag>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <Qsci/qscicommandset.h>
 #include <Qsci/qscilexer.h>
+#include <QCheckBox>
 
-SonicPiScintilla::SonicPiScintilla(SonicPiLexer *lexer, SonicPiTheme *theme)
+SonicPiScintilla::SonicPiScintilla(SonicPiLexer *lexer, SonicPiTheme *theme, QString fileName, OscSender *oscSender, QCheckBox *autoIndent)
   : QsciScintilla()
 {
+  setAcceptDrops(true);
   this->theme = theme;
+  this->oscSender = oscSender;
+  this->fileName = fileName;
+  this->autoIndent = autoIndent;
+  this->selectionMode = false;
   standardCommands()->clearKeys();
   standardCommands()->clearAlternateKeys();
   QString skey;
-  QSettings settings("sonic-pi.net", "Key bindings");
+  QSettings settings("sonic-pi.net", "gui-keys-bindings");
+  mutex = new QMutex(QMutex::Recursive);
 
 #if defined(Q_OS_MAC)
   int SPi_CTRL = Qt::META;
@@ -40,10 +50,8 @@ SonicPiScintilla::SonicPiScintilla(SonicPiLexer *lexer, SonicPiTheme *theme)
   addKeyBinding(settings, QsciCommand::PageDown, Qt::Key_PageDown);
   addKeyBinding(settings, QsciCommand::PageUp, Qt::Key_PageUp);
 
-  addKeyBinding(settings, QsciCommand::LineDown, Qt::Key_N | SPi_CTRL);
   addOtherKeyBinding(settings, QsciCommand::LineDown, Qt::Key_Down);
   addKeyBinding(settings, QsciCommand::LineDownExtend, Qt::Key_Down | Qt::SHIFT);
-  addKeyBinding(settings, QsciCommand::LineUp, Qt::Key_P | SPi_CTRL);
   addOtherKeyBinding(settings, QsciCommand::LineUp, Qt::Key_Up);
   addKeyBinding(settings, QsciCommand::LineUpExtend, Qt::Key_Up | Qt::SHIFT);
 
@@ -72,20 +80,20 @@ SonicPiScintilla::SonicPiScintilla(SonicPiLexer *lexer, SonicPiTheme *theme)
   addKeyBinding(settings, QsciCommand::Home, Qt::Key_A | SPi_CTRL);
   addKeyBinding(settings, QsciCommand::VCHome, Qt::Key_Home);
   addKeyBinding(settings, QsciCommand::VCHomeExtend, Qt::Key_Home | Qt::SHIFT);
-  addKeyBinding(settings, QsciCommand::DocumentStart, Qt::Key_Home | SPi_CTRL);
+
+  addKeyBinding(settings, QsciCommand::DocumentStart, Qt::Key_Comma | Qt::SHIFT | SPi_META);
   addKeyBinding(settings, QsciCommand::DocumentStartExtend, Qt::Key_Home | SPi_CTRL | Qt::SHIFT);
 
   addKeyBinding(settings, QsciCommand::LineEnd, Qt::Key_E | SPi_CTRL);
   addOtherKeyBinding(settings, QsciCommand::LineEnd, Qt::Key_End);
   addKeyBinding(settings, QsciCommand::LineEndExtend, Qt::Key_End | Qt::SHIFT);
-  addKeyBinding(settings, QsciCommand::DocumentEnd, Qt::Key_End | SPi_CTRL);
+
+  addKeyBinding(settings, QsciCommand::DocumentEnd, Qt::Key_Greater | SPi_META);
+  addOtherKeyBinding(settings, QsciCommand::DocumentEnd, Qt::Key_Period | Qt::SHIFT | SPi_META);
   addKeyBinding(settings, QsciCommand::DocumentEndExtend, Qt::Key_End | SPi_CTRL | Qt::SHIFT);
 
   addKeyBinding(settings, QsciCommand::Delete, Qt::Key_D | SPi_CTRL);
   addKeyBinding(settings, QsciCommand::VerticalCentreCaret, Qt::Key_L | SPi_CTRL);
-
-  // tab return
-  addKeyBinding(settings, QsciCommand::Newline, Qt::Key_Return);
 
   addKeyBinding(settings, QsciCommand::Backtab, Qt::Key_Tab | Qt::SHIFT);
 
@@ -93,10 +101,8 @@ SonicPiScintilla::SonicPiScintilla(SonicPiLexer *lexer, SonicPiTheme *theme)
   addKeyBinding(settings, QsciCommand::SelectionCopy, Qt::Key_C | SPi_META);
   addOtherKeyBinding(settings, QsciCommand::SelectionCopy, Qt::Key_C | SPi_CTRL);
   addKeyBinding(settings, QsciCommand::SelectionCut, Qt::Key_X | SPi_META);
-  addOtherKeyBinding(settings, QsciCommand::SelectionCut, Qt::Key_X | SPi_CTRL);
 
-  addKeyBinding(settings, QsciCommand::Paste, Qt::Key_V | SPi_META);
-  addOtherKeyBinding(settings, QsciCommand::Paste, Qt::Key_Y | SPi_CTRL);
+
   addKeyBinding(settings, QsciCommand::Undo, Qt::Key_Z | SPi_META);
   addOtherKeyBinding(settings, QsciCommand::Undo, Qt::Key_Z | SPi_CTRL);
   addKeyBinding(settings, QsciCommand::Redo, Qt::Key_Z | Qt::SHIFT | SPi_META);
@@ -127,9 +133,9 @@ SonicPiScintilla::SonicPiScintilla(SonicPiLexer *lexer, SonicPiTheme *theme)
 
   setMarginsBackgroundColor(theme->color("MarginBackground"));
   setMarginsForegroundColor(theme->color("MarginForeground"));
-  setMarginsFont(QFont("Menlo", 15, -1, true));
+  setMarginsFont(QFont("Hack", 15, -1, true));
   setUtf8(true);
-  setText("#loading...");
+  setText("# Loading previous buffer contents. Please wait...");
   setLexer((QsciLexer *)lexer);
 
   markerDefine(RightArrow, 8);
@@ -151,6 +157,7 @@ SonicPiScintilla::SonicPiScintilla(SonicPiLexer *lexer, SonicPiTheme *theme)
 }
 
 void SonicPiScintilla::redraw(){
+  mutex->lock();
   setMarginsBackgroundColor(theme->color("MarginBackground"));
   setMarginsForegroundColor(theme->color("MarginForeground"));
   setSelectionBackgroundColor(theme->color("SelectionBackground"));
@@ -160,48 +167,62 @@ void SonicPiScintilla::redraw(){
   setIndentationGuidesForegroundColor(theme->color("IndentationGuidesForeground"));
   setMatchedBraceBackgroundColor(theme->color("MatchedBraceBackground"));
   setMatchedBraceForegroundColor(theme->color("MatchedBraceForeground"));
+  mutex->unlock();
 }
 
 void SonicPiScintilla::highlightAll(){
+  mutex->lock();
   setCaretLineBackgroundColor("deeppink");
+  mutex->unlock();
 }
 
 void SonicPiScintilla::unhighlightAll(){
+  mutex->lock();
   setCaretLineBackgroundColor(theme->color("CaretLineBackground"));
+  mutex->unlock();
 }
 
 void SonicPiScintilla::hideLineNumbers(){
+  mutex->lock();
   setMarginLineNumbers(0, false);
   setMarginWidth(0, "0");
   SendScintilla(SCI_HIDELINES);
+  mutex->unlock();
 }
 
 void SonicPiScintilla::showLineNumbers(){
+  mutex->lock();
   setMarginLineNumbers(0, true);
   setMarginWidth(0, "1000");
   SendScintilla(SCI_SHOWLINES);
+  mutex->unlock();
 }
 
 void SonicPiScintilla::addOtherKeyBinding(QSettings &qs, int cmd, int key)
 {
+  mutex->lock();
   QString skey;
   skey.sprintf("/Scintilla/keymap/c%d/alt", cmd);
   qs.setValue(skey, key);
+  mutex->unlock();
 }
 
 void SonicPiScintilla::addKeyBinding(QSettings &qs, int cmd, int key)
 {
+  mutex->lock();
   QString skey;
   skey.sprintf("/Scintilla/keymap/c%d/key", cmd);
   qs.setValue(skey, key);
+  mutex->unlock();
 }
 
 void SonicPiScintilla::cutLineFromPoint()
 {
+  mutex->lock();
   int linenum, index;
   getCursorPosition(&linenum, &index);
 
-  if (text(linenum) == "\n")
+  if (text(linenum).mid(index).contains(QRegExp("^\\s*\\n")))
   {
     setSelection(linenum, index, linenum + 1, 0);
     SendScintilla(SCI_CUT);
@@ -209,22 +230,27 @@ void SonicPiScintilla::cutLineFromPoint()
     {
       //  SendScintilla(SCI_CLEARSELECTIONS);
       int pos = SendScintilla(SCI_GETCURRENTPOS);
+
       SendScintilla(SCI_LINEEND);
       SendScintilla(SCI_SETANCHOR, pos);
       SendScintilla(SCI_CUT);
     }
+  mutex->unlock();
 }
 
 void SonicPiScintilla::tabCompleteifList()
 {
+  mutex->lock();
   if(isListActive())
     {
       SendScintilla(QsciCommand::Tab);
     }
+  mutex->unlock();
 }
 
 void SonicPiScintilla::transposeChars()
 {
+  mutex->lock();
   int linenum, index;
   getCursorPosition(&linenum, &index);
   setSelection(linenum, 0, linenum + 1, 0);
@@ -247,76 +273,118 @@ void SonicPiScintilla::transposeChars()
   }
 
   setCursorPosition(linenum, index);
+  mutex->unlock();
 }
 
 void SonicPiScintilla::setMark()
 {
+  mutex->lock();
   int pos = SendScintilla(SCI_GETCURRENTPOS);
   SendScintilla(SCI_SETEMPTYSELECTION, pos);
   SendScintilla(SCI_SETSELECTIONMODE, 0);
+  this->selectionMode = true;
+  mutex->unlock();
 }
 
 void SonicPiScintilla::escapeAndCancelSelection()
 {
+  mutex->lock();
   int pos = SendScintilla(SCI_GETCURRENTPOS);
   SendScintilla(SCI_SETEMPTYSELECTION, pos);
   SendScintilla(SCI_CANCEL);
+  this->selectionMode = false;
+  mutex->unlock();
 }
 
 void SonicPiScintilla::deselect()
 {
+  mutex->lock();
   int pos = SendScintilla(SCI_GETCURRENTPOS);
   SendScintilla(SCI_SETEMPTYSELECTION, pos);
+  this->selectionMode = false;
+  mutex->unlock();
 }
 
 void SonicPiScintilla::copyClear()
 {
+  mutex->lock();
   QsciScintilla::copy();
   deselect();
+  mutex->unlock();
 }
 
 void SonicPiScintilla::replaceLine(int lineNumber, QString newLine)
 {
+  mutex->lock();
   setSelection(lineNumber, 0, lineNumber + 1, 0);
   replaceSelectedText(newLine);
+  mutex->unlock();
 }
 
 void SonicPiScintilla::replaceLines(int lineStart, int lineFinish, QString newLines)
 {
+  mutex->lock();
   setSelection(lineStart, 0, lineFinish + 1, 0);
-  replaceSelectedText(newLines);
+  replaceSelectedText(newLines); mutex->unlock();
 }
 
 void SonicPiScintilla::forwardLines(int numLines) {
+  mutex->lock();
   int idx;
   if(numLines > 0) {
     for (idx = 0 ; idx < numLines ; idx++) {
-      SendScintilla(SCI_LINEUP);
+      if(selectionMode) {
+        SendScintilla(SCI_LINEUPEXTEND);
+      } else {
+        SendScintilla(SCI_LINEUP);
+      }
     }
   } else {
     for (idx = 0 ; idx > numLines ; idx--) {
-      SendScintilla(SCI_LINEDOWN);
+      if(selectionMode) {
+        SendScintilla(SCI_LINEDOWNEXTEND);
+      } else {
+        SendScintilla(SCI_LINEDOWN);
+      }
     }
   }
+  mutex->unlock();
+}
+
+void SonicPiScintilla::forwardOneLine() {
+  forwardLines(1);
+}
+
+void SonicPiScintilla::backOneLine() {
+  forwardLines(-1);
 }
 
 void SonicPiScintilla::forwardTenLines() {
+  mutex->lock();
   forwardLines(10);
+  mutex->unlock();
 }
 
 void SonicPiScintilla::backTenLines() {
+  mutex->lock();
   forwardLines(-10);
+  mutex->unlock();
 }
 
 void SonicPiScintilla::moveLineOrSelectionUp() {
+  mutex->lock();
   moveLineOrSelection(-1);
+  mutex->unlock();
 }
 
 void SonicPiScintilla::moveLineOrSelectionDown() {
+  mutex->lock();
   moveLineOrSelection(1);
+  mutex->unlock();
 }
 
 void SonicPiScintilla::moveLineOrSelection(int numLines) {
+  mutex->lock();
   beginUndoAction();
 
   int linenum, cursor, origLinenum, origCursor;
@@ -365,6 +433,7 @@ void SonicPiScintilla::moveLineOrSelection(int numLines) {
   setSelection(linenum + diffLine, diffIndex, linenum, 0);
 
   endUndoAction();
+  mutex->unlock();
 }
 
 QStringList SonicPiScintilla::apiContext(int pos, int &context_start,
@@ -388,6 +457,7 @@ QStringList SonicPiScintilla::apiContext(int pos, int &context_start,
 }
 
 int SonicPiScintilla::incLineNumWithinBounds(int linenum, int inc) {
+  mutex->lock();
   linenum += inc;
   int maxBufferIndex = lines() - 1;
 
@@ -400,9 +470,11 @@ int SonicPiScintilla::incLineNumWithinBounds(int linenum, int inc) {
   }
 
   return linenum;
+  mutex->unlock();
 }
 
 void SonicPiScintilla::moveLines(int numLines) {
+  mutex->lock();
   if (numLines > 0)
   {
     for(int i = 0 ; i < numLines ; i++) {
@@ -413,6 +485,7 @@ void SonicPiScintilla::moveLines(int numLines) {
       SendScintilla(SCI_LINEUP);
     }
   }
+  mutex->unlock();
 }
 
 void SonicPiScintilla::toggleComment() {
@@ -447,6 +520,7 @@ void SonicPiScintilla::toggleComment() {
 }
 
 void SonicPiScintilla::upcaseWordOrSelection(){
+  mutex->lock();
   if(hasSelectedText()) {
     SendScintilla(SCI_UPPERCASE);
   } else {
@@ -455,10 +529,12 @@ void SonicPiScintilla::upcaseWordOrSelection(){
     SendScintilla(SCI_UPPERCASE);
     deselect();
   }
+  mutex->unlock();
 }
 
 
 void SonicPiScintilla::downcaseWordOrSelection(){
+  mutex->lock();
   if(hasSelectedText()) {
     SendScintilla(SCI_LOWERCASE);
   } else {
@@ -467,9 +543,11 @@ void SonicPiScintilla::downcaseWordOrSelection(){
     SendScintilla(SCI_LOWERCASE);
     deselect();
   }
+  mutex->unlock();
 }
 
 void SonicPiScintilla::setLineErrorMarker(int lineNumber){
+  mutex->lock();
 
   markerDeleteAll(-1);
   markerAdd(lineNumber, 8);
@@ -481,8 +559,139 @@ void SonicPiScintilla::setLineErrorMarker(int lineNumber){
   //   setCursorPosition(lineNumber, 0);
   // }
 
+  mutex->unlock();
 }
 
 void SonicPiScintilla::clearLineMarkers(){
+  mutex->lock();
   markerDeleteAll(-1);
+  mutex->unlock();
+}
+
+void SonicPiScintilla::zoomFontIn() {
+  mutex->lock();
+  int zoom = property("zoom").toInt();
+  zoom++;
+  if (zoom > 20) zoom = 20;
+  setProperty("zoom", QVariant(zoom));
+  zoomTo(zoom);
+  mutex->unlock();
+}
+
+void SonicPiScintilla::zoomFontOut() {
+  mutex->lock();
+  int zoom = property("zoom").toInt();
+  zoom--;
+  if (zoom < -10) zoom = -10;
+  setProperty("zoom", QVariant(zoom));
+  zoomTo(zoom);
+  mutex->unlock();
+}
+
+void SonicPiScintilla::newLine() {
+  mutex->lock();
+  SendScintilla(QsciCommand::Newline);
+  mutex->unlock();
+}
+
+void SonicPiScintilla::replaceBuffer(QString content, int line, int index, int first_line) {
+  mutex->lock();
+  beginUndoAction();
+  insert(" ");
+  SendScintilla(QsciCommand::Delete);
+  selectAll();
+  replaceSelectedText(content);
+  setCursorPosition(line, index);
+  setFirstVisibleLine(first_line);
+  endUndoAction();
+  mutex->unlock();
+}
+
+void SonicPiScintilla::completeListOrNewlineAndIndent(){
+  mutex->lock();
+  if(isListActive()) {
+    tabCompleteifList();
+  }
+  else {
+    if(this->autoIndent->isChecked()) {
+      newlineAndIndent();
+    } else {
+      newLine();
+    }
+  }
+  mutex->unlock();
+}
+
+void SonicPiScintilla::newlineAndIndent() {
+  mutex->lock();
+  int point_line, point_index, first_line;
+  getCursorPosition(&point_line, &point_index);
+  first_line = firstVisibleLine();
+
+  std::string code = text().toStdString();
+
+  // TODO: fix this:
+  std::string id = "foobar";
+
+  oscSender->bufferNewlineAndIndent(point_line, point_index, first_line, code, fileName.toStdString(), id);
+  mutex->unlock();
+}
+
+void SonicPiScintilla::dragEnterEvent(QDragEnterEvent *event) {
+  mutex->lock();
+  if (event->mimeData()->hasFormat("text/uri-list")) {
+    event->acceptProposedAction();
+  }
+  mutex->unlock();
+}
+
+void SonicPiScintilla::dragMoveEvent(QDragMoveEvent *event) {
+  mutex->lock();
+  if (event->mimeData()->hasFormat("text/uri-list")) {
+    event->acceptProposedAction();
+  }
+  mutex->unlock();
+}
+
+bool SonicPiScintilla::event(QEvent *evt) {
+  mutex->lock();
+  if (evt->type()==QEvent::KeyPress) {
+    QKeyEvent* key = static_cast<QKeyEvent*>(evt);
+    if (key->key() == Qt::Key_Return) {
+      completeListOrNewlineAndIndent();
+      return true;
+    }
+  }
+
+  return QsciScintilla::event(evt);
+  mutex->unlock();
+}
+
+
+void SonicPiScintilla::dropEvent(QDropEvent *dropEvent) {
+  mutex->lock();
+  if (dropEvent->mimeData()->hasFormat("text/uri-list")) {
+    dropEvent->acceptProposedAction();
+    QList<QUrl> urlList = dropEvent->mimeData()->urls();
+    QString text;
+    for (int i = 0; i < urlList.size(); ++i) {
+      text += "\"" + urlList.at(i).toLocalFile() + "\"" + QLatin1Char('\n');
+    }
+    insert(text);
+  }
+  mutex->unlock();
+}
+
+void SonicPiScintilla::sp_paste() {
+  mutex->lock();
+  SendScintilla(QsciCommand::Paste);
+  deselect();
+  mutex->unlock();
+}
+
+void SonicPiScintilla::sp_cut() {
+  mutex->lock();
+  SendScintilla(QsciCommand::SelectionCut);
+  deselect();
+  mutex->unlock();
 }

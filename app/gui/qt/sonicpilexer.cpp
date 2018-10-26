@@ -3,11 +3,11 @@
 // Full project source: https://github.com/samaaron/sonic-pi
 // License: https://github.com/samaaron/sonic-pi/blob/master/LICENSE.md
 //
-// Copyright 2013, 2014 by Sam Aaron (http://sam.aaron.name).
+// Copyright 2013, 2014, 2015, 2016 by Sam Aaron (http://sam.aaron.name).
 // All rights reserved.
 //
-// Permission is granted for use, copying, modification, distribution,
-// and distribution of modified versions of this work as long as this
+// Permission is granted for use, copying, modification, and
+// distribution of modified versions of this work as long as this
 // notice is included.
 //++
 
@@ -23,17 +23,10 @@ SonicPiLexer::SonicPiLexer(SonicPiTheme *theme) : QsciLexerRuby() {
     this->setDefaultPaper(theme->color("Background"));
 }
 
-#if defined(Q_OS_WIN)
-static char default_font[] = "Courier New";
-#elif defined(Q_OS_MAC)
-static char default_font[] = "Menlo";
-#else
-static char default_font[] = "Bitstream Vera Sans Mono";
-#endif
-
+static char default_font[] = "Hack";
 
 // triggers autocompletion for the next word
-QStringList QsciLexer::autoCompletionWordSeparators() const {
+QStringList SonicPiLexer::autoCompletionWordSeparators() const {
   QStringList seps;
   seps << " " << "," << "(" << ")" << "{" << "}";
   return seps;
@@ -207,14 +200,19 @@ QColor SonicPiLexer::defaultPaper(int style) const
 
 
 // Returns the font of the text for a style.
-QFont QsciLexerRuby::defaultFont(int style) const
+QFont SonicPiLexer::defaultFont(int style) const
 {
     QFont f;
+    QString activeFont = default_font;
+
+    if(!theme->font("EditorFace").isEmpty()){
+        activeFont = theme->font("EditorFace");
+    }
 
     switch (style)
     {
     case Comment:
-      f = QFont(default_font, 15, -1, true);
+      f = QFont(activeFont, 15, -1, true);
 	  break;
 
     case POD:
@@ -229,7 +227,7 @@ QFont QsciLexerRuby::defaultFont(int style) const
     case ModuleName:
     case DemotedKeyword:
     default:
-        f = QFont(default_font, 15);
+        f = QFont(activeFont, 15);
     }
 
     return f;

@@ -5,7 +5,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2013, 2014, 2015 Samuel Aaron ([http://sam.aaron.name](http://sam.aaron.name))
+Copyright (c) 2013, 2014, 2015, 2016 Samuel Aaron ([http://sam.aaron.name](http://sam.aaron.name))
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
+## GUI
+As the Sonic Pi GUI links with GPLv3-licensed software distributors of
+Sonic Pi GUI binaries must comply with the terms of the GPL
+
+## Font
+The font used in the GUI is [Hack](http://sourcefoundry.org/hack/) released under the [Hack Open Font License v2.0](https://github.com/chrissimpkins/Hack/blob/master/LICENSE.md)
+
 
 ## Docs, Tutorial and Examples 
 (contents of [etc/doc/](https://github.com/samaaron/sonic-pi/tree/master/etc/doc) and [etc/examples](https://github.com/samaaron/sonic-pi/tree/master/etc/examples) directories)
@@ -35,36 +42,53 @@ and contents of the doc directory including the articles and the
 tutorial are copyright by Sam Aaron unless a specific author is stated
 with the comment `# coded by ...` in which case the copyright is
 associated with that author (2015) and the content is released under the
-CC BY-NC-SA 4.0 license:
+CC BY-SA 4.0 license:
 
-[http://creativecommons.org/licenses/by-nc-sa/4.0/](http://creativecommons.org/licenses/by-nc-sa/4.0/)
+[http://creativecommons.org/licenses/by-sa/4.0/](http://creativecommons.org/licenses/by-sa/4.0/)
 
 
 ## Samples
 (contents of [etc/samples/](https://github.com/samaaron/sonic-pi/tree/master/etc/samples))
 
-All the bundled samples are individually licensed under CC0 1.0
-Universal Public Domain Dedication. They have all been obtained from
-[freesound.org](http://freesound.org) and links to their sources can be
-found in the file [etc/samples/README.md](https://github.com/samaaron/sonic-pi/blob/master/etc/samples/README.md)
+All the bundled samples are individually licensed under a
+[CC0 1.0 Universal Public Domain Dedication](http://creativecommons.org/publicdomain/zero/1.0/). They
+have all been obtained from [freesound.org](http://freesound.org) and
+links to their sources can be found in the file
+[etc/samples/README.md](https://github.com/samaaron/sonic-pi/blob/master/etc/samples/README.md)
 
 [http://creativecommons.org/publicdomain/zero/1.0/](http://creativecommons.org/publicdomain/zero/1.0/)
 
 
-## Bundled Software
+## Wavetables
+(contents of [etc/wavetables/](https://github.com/samaaron/sonic-pi/tree/master/etc/wavetables)
 
+All the bundled wavetable samples are individually licensed under a
+[CC0 1.0 Universal Public Domain Dedication](http://creativecommons.org/publicdomain/zero/1.0/). They
+have been obtained from the
+[Adventure Kid](http://www.adventurekid.se/akrt/waveforms/adventure-kid-waveforms/)
+site.
+
+
+## Bundled Software
 The following is a list of the software included in Sonic Pi with their
 relevant licenses:
 
-### Unlinked software
 
+### Unlinked software
 * [Ruby](http://ruby-lang.org) - [Ruby License](https://www.ruby-lang.org/en/about/license.txt)
-* [SuperCollider](http://supercollider.sourceforge.net) - [GNU General Public License v3](http://www.gnu.org/copyleft/gpl.html)
+* [SuperCollider](http://supercollider.sourceforge.net) - [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.html)
+* [SoX](http://sox.sourceforge.net) - [GNU General Public License v2](https://www.gnu.org/licenses/gpl-2.0.html)
+* [Erlang](http://erlang.org) - [Erlang Public License](https://www.erlang.org/EPLICENSE)
+* [osmid](https://github.com/llloret/osmid) - [MIT License](http://opensource.org/licenses/MIT)
+* osmid depends on [JUCE](http://juce.com) - [GNU General Public License v2](https://www.gnu.org/licenses/gpl-2.0.html)
+
+
 
 ### Dynamically Linked Libraries for GUI
-
 * [Qt](http://qt-project.org) - [LGPL v2.1](https://www.gnu.org/licenses/lgpl-2.1.html)
-* [QScintilla2](http://www.riverbankcomputing.com/software/qscintilla/intro) - [GPL v2](https://tldrlegal.com/license/gnu-general-public-license-v2)
+* [QScintilla2](http://www.riverbankcomputing.com/software/qscintilla/intro) - [GNU General Public License v2](https://www.gnu.org/licenses/gpl-2.0.html)
+* [Qwt](http://qwt.sourceforge.net) -  [Qwt License, Version 1.0](http://qwt.sourceforge.net/qwtlicense.html)
+
 
 ### Included Ruby Libraries for Server
 (contents of [app/server/vendor/](https://github.com/samaaron/sonic-pi/tree/master/app/server/vendor))
@@ -74,15 +98,11 @@ relevant licenses:
 * [Blankslate](https://github.com/masover/blankslate) - [MIT License](http://opensource.org/licenses/MIT)
 * [Did You Mean](https://github.com/yuki24/did_you_mean) - [MIT License](http://opensource.org/licenses/MIT)
 * [FFI](https://github.com/ffi/ffi) - [BSD 3-Clause License](http://opensource.org/licenses/BSD-3-Clause)
-* [FFI Core MIDI](https://github.com/arirusso/ffi-coremidi) - [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
 * [Hamster](https://github.com/hamstergem/hamster) - [MIT License](http://opensource.org/licenses/MIT)
 * [i81n](https://github.com/svenfuchs/i18n) - [MIT License](http://opensource.org/licenses/MIT)
 * [Interception](https://github.com/ConradIrwin/interception) - [MIT License](http://opensource.org/licenses/MIT)
 * [Kramdown](http://kramdown.gettalong.org) - [MIT License](http://opensource.org/licenses/MIT)
-* [MIDI Winmm](https://github.com/arirusso/midi-winmm) - [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
-* [MIDILib](https://github.com/jimm/midilib) - [Ruby License](https://www.ruby-lang.org/en/about/license.txt)
 * [Multi JSON](https://github.com/intridea/multi_json) - [MIT License](http://opensource.org/licenses/MIT)
-* [OSC Ruby](https://github.com/aberant/osc-ruby) - [MIT License](http://opensource.org/licenses/MIT)
 * [Parslet](http://kschiess.github.io/parslet/) - [MIT License](http://opensource.org/licenses/MIT)
 * [Rouge](https://github.com/jneen/rouge) - [MIT License](http://opensource.org/licenses/MIT)
 * [Rubame](https://github.com/saward/Rubame) - [MIT License](http://opensource.org/licenses/MIT)
@@ -90,7 +110,20 @@ relevant licenses:
 * [Ruby Prof](https://github.com/ruby-prof/ruby-prof) - [BSD 2-Clause License](http://opensource.org/licenses/BSD-2-Clause) - [MIT License](http://opensource.org/licenses/MIT)
 * [Rugged](https://github.com/libgit2/rugged) - [MIT License](http://opensource.org/licenses/MIT)
 * [Thread Safe](https://github.com/ruby-concurrency/thread_safe) - [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
-* [UniMIDI](https://github.com/arirusso/unimidi) - [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
 * [Websocket](https://github.com/imanel/websocket-ruby) - [MIT License](http://opensource.org/licenses/MIT)
 * [NArray](https://github.com/masa16/narray) - [Ruby License](https://www.ruby-lang.org/en/about/license.txt)
 * [Ruby CoreAudio](https://github.com/nagachika/ruby-coreaudio) - [MIT License](http://opensource.org/licenses/MIT)
+* [WaveFile](https://github.com/jstrait/wavefile/) - [MIT License](http://opensource.org/licenses/MIT)
+* [Benchmark-IPS](https://github.com/evanphx/benchmark-ips) - [MIT License](http://opensource.org/licenses/MIT)
+* [Mocha](http://gofreerange.com/mocha/docs/) - [MIT License](http://opensource.org/licenses/MIT)
+* [MiniTest](http://ruby-doc.org/stdlib-2.0.0/libdoc/minitest/rdoc/MiniTest.html) - [Ruby License](https://www.ruby-lang.org/en/about/license.txt)
+* [AST](https://github.com/whitequark/ast) - [MIT License](http://opensource.org/licenses/MIT)
+* [Parser](https://github.com/whitequark/parser) - [MIT License](http://opensource.org/licenses/MIT)
+* [Metaclass](https://github.com/floehopper/metaclass) - [MIT License](http://opensource.org/licenses/MIT)
+* [Sys Proctable](https://github.com/djberg96/sys-proctable) - [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
+* [fast_osc](http://github.com/xavriley/fast_osc) - [MIT License](http://opensource.org/licenses/MIT)
+
+
+### Dynamically Linked Libraries for Server
+* [Aubio](http://aubio.org) - [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.html)
+* [rtosc](https://github.com/fundamental/rtosc) - [MIT License](http://opensource.org/licenses/MIT)

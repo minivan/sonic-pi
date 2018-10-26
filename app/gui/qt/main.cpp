@@ -3,7 +3,7 @@
 // Full project source: https://github.com/samaaron/sonic-pi
 // License: https://github.com/samaaron/sonic-pi/blob/master/LICENSE.md
 //
-// Copyright 2013, 2014, 2015 by Sam Aaron (http://sam.aaron.name).
+// Copyright 2013, 2014, 2015, 2016 by Sam Aaron (http://sam.aaron.name).
 // All rights reserved.
 //
 // Permission is granted for use, copying, modification, and
@@ -20,6 +20,7 @@
 #include <QLibraryInfo>
 
 #include "mainwindow.h"
+#include "sonicpilog.h"
 int main(int argc, char *argv[])
 {
 #ifndef Q_OS_MAC
@@ -27,6 +28,11 @@ int main(int argc, char *argv[])
 #endif
 
   QApplication app(argc, argv);
+
+  QFontDatabase::addApplicationFont(":/fonts/Hack-Regular.ttf");
+  QFontDatabase::addApplicationFont(":/fonts/Hack-Italic.ttf");
+
+  qRegisterMetaType<SonicPiLog::MultiMessage>("SonicPiLog::MultiMessage");
 
   QString systemLocale = QLocale::system().name();
 
